@@ -4,6 +4,14 @@
 
 ## 运行方法
 
-```bash
-python run.py
-```
+1. 登陆QQBot，扫描二维码
+
+    ```bash
+    qqbot
+    ```
+
+2. 运行脚本
+
+    ```bash
+    python run.py
+    ```
