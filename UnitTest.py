@@ -7,10 +7,14 @@ def CZBotWordTest():
     def display(s):
         print(bot.getSentence(s))
     bot = CZBotWord()
+    CZBotWord.initRedis()
     display("chenzhe好强啊")
     display("chenzhe为什么这么强")
     display("will爷")
     display("chenzhe强")
+    display("基础知识")
+    display("人类的本质是什么")
+    display("啥？")
     # display("...")
 
 
