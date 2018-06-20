@@ -1,3 +1,5 @@
+# coding:utf8
+from redis import Redis  # 实现持久化存储
 
 
 class CZBotWord:
@@ -18,16 +20,16 @@ class CZBotWord:
         """
         初始化CZBotWord
         """
-        self.__czDic = dict()
-
-        # 初始化czDic
+        self.redis = Redis()
         data = self.loadFromJson()
         for (key, items) in data.items():
             if isinstance(items, list):
                 for item in items:
-                    self.__czDic[item] = key
+                    if self.redis.get(item) is None:
+                        self.redis.set(item, key)
             elif isinstance(items, str):
-                self.__czDic[items] = key
+                if self.redis.get(items) is None:
+                    self.redis.set(items, key)
 
     def setWord(self, key, value, save=True):
         """
@@ -40,7 +42,7 @@ class CZBotWord:
         """
         if not isinstance(key, (str)) or not isinstance(value, (str)):
             raise ValueError
-        self.__czDic[key] = value
+        self.redis[key] = value
 
     def getSentence(self, sentence):
         """
@@ -56,31 +58,34 @@ class CZBotWord:
         if sentence == '':
             return ''
         import jieba
+
+        def decode(s):
+            """
+            convert bytes to str (utf-8)
+
+            param:
+                s bytes
+            """
+            if s is None:
+                return ''
+            return s.decode('utf-8')
         seg_list = jieba.lcut(sentence)
         first = seg_list[0]  # 头
-        if str.lower(first) == 'chenzhe':
+        chenzhe = ['chenzhe', 'chen_zhe']
+        if str.lower(first) in chenzhe:
             # chenzhe匹配模式：查找chenzhe开头的字串
             for item in seg_list[1:]:
                 key = first+item
-                try:
-                    ans = self.__czDic[key]
-                except KeyError:
-                    continue
-                return ans
+                ans = self.redis.get(key)
+                if ans is not None:
+                    return decode(ans) if ans else ''
         elif len(seg_list) == 1:
             # 当只有一个元素的时候
-            try:
-                ans = self.__czDic[seg_list[0]]
-            except KeyError:
-                return None
-            return ans
+            ans = self.redis.get(seg_list[0])
+            return decode(ans) if not ans else ''
         else:
             # 普通匹配模式：查找每一个分词
             for item in seg_list:
-                try:
-                    ans = self.__czDic[first+item]
-                except KeyError:
-                    first = item
-                    continue
-                # 如果还是找不到最后试一试全匹配
-                return ans if not ans else self.__czDic[''.join(seg_list)]
+                ans = self.redis.get(first+item)
+                if ans is not None:
+                    return decode(ans) if ans else ''
