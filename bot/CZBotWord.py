@@ -4,12 +4,15 @@ from redis import Redis  # 实现持久化存储
 
 class CZBotWord:
     """
-    chenzhe机器人语句部分
+    chenzhe机器人自然语言处理部分
+
+    **NOTICE**: 使用前请开启redis, host='localhost', port=6379
     """
 
     @staticmethod
     def loadFromJson(path='./json/cz_list.json'):
         """
+        从JSON中加载语录
         """
         import json
         with open(path) as f:
@@ -31,18 +34,22 @@ class CZBotWord:
                 if self.redis.get(items) is None:
                     self.redis.set(items, key)
 
-    def setWord(self, key, value, save=True):
+    def setWord(self, key, value):
         """
-        设置chenzhe的语录
+        设置chenzhe的语录，将会持久化保存
 
         params:
             key 键
             value 值
-            save 是否保存到本地，以便下次运行时调用
         """
         if not isinstance(key, (str)) or not isinstance(value, (str)):
-            raise ValueError
-        self.redis[key] = value
+            raise ValueError("key或value必须为str类型")
+        self.redis.set(key, value)
+
+    def getWord(self, key):
+        if not isinstance(key, (str)):
+            raise ValueError("key必须为str类型")
+        return self.redis.get(key)
 
     def getSentence(self, sentence):
         """
